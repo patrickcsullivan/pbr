@@ -1,3 +1,4 @@
+mod axis;
 mod bounding_box;
 mod medium;
 mod ray;

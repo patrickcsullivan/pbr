@@ -1,4 +1,5 @@
 use crate::medium;
+use cgmath::Transform;
 
 pub struct Ray {
     pub origin: cgmath::Point3<f32>,
@@ -22,6 +23,12 @@ impl Ray {
     /// Get the position along the ray for a given value for the parameter, t.
     fn at_t(&self, t: f32) -> cgmath::Point3<f32> {
         self.origin + self.direction * t
+    }
+
+    fn transform(&mut self, transform: cgmath::Matrix4<f32>) {
+        // TODO: Deal with round-off error in origin transformation. (p. 95)
+        self.origin = transform.transform_point(self.origin);
+        self.direction = transform.transform_vector(self.direction);
     }
 }
 

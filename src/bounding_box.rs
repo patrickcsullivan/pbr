@@ -1,4 +1,5 @@
 use crate::axis;
+use cgmath::Transform;
 use cgmath::VectorSpace;
 
 pub type Bounds2i = Bounds2<i32>;
@@ -18,7 +19,7 @@ pub struct Bounds3<S> {
     max: cgmath::Point3<S>,
 }
 
-impl<S: cgmath::BaseNum + std::cmp::Ord> Bounds3<S> {
+impl<S: cgmath::BaseNum + std::cmp::PartialOrd + std::fmt::Display> Bounds3<S> {
     /// Creates a bounding box that encloses a single point.
     pub fn from_point(p: cgmath::Point3<S>) -> Self {
         Self { min: p, max: p }
@@ -27,14 +28,14 @@ impl<S: cgmath::BaseNum + std::cmp::Ord> Bounds3<S> {
     /// Creates a bounding box that encloses the given corner points.
     pub fn from_corners(p1: cgmath::Point3<S>, p2: cgmath::Point3<S>) -> Self {
         let min = cgmath::Point3::new(
-            std::cmp::min(p1.x, p2.x),
-            std::cmp::min(p1.y, p2.y),
-            std::cmp::min(p1.z, p2.z),
+            min_partial_ord(p1.x, p2.x),
+            min_partial_ord(p1.y, p2.y),
+            min_partial_ord(p1.z, p2.z),
         );
         let max = cgmath::Point3::new(
-            std::cmp::max(p1.x, p2.x),
-            std::cmp::max(p1.y, p2.y),
-            std::cmp::max(p1.z, p2.z),
+            max_partial_ord(p1.x, p2.x),
+            max_partial_ord(p1.y, p2.y),
+            max_partial_ord(p1.z, p2.z),
         );
         Self { min, max }
     }
@@ -56,14 +57,14 @@ impl<S: cgmath::BaseNum + std::cmp::Ord> Bounds3<S> {
     /// Returns a union of two bounding boxes.
     pub fn union(&self, other: &Self) -> Self {
         let min = cgmath::Point3::new(
-            std::cmp::min(self.min.x, other.min.x),
-            std::cmp::min(self.min.y, other.min.y),
-            std::cmp::min(self.min.z, other.min.z),
+            min_partial_ord(self.min.x, other.min.x),
+            min_partial_ord(self.min.y, other.min.y),
+            min_partial_ord(self.min.z, other.min.z),
         );
         let max = cgmath::Point3::new(
-            std::cmp::max(self.max.x, other.max.x),
-            std::cmp::max(self.max.y, other.max.y),
-            std::cmp::max(self.max.z, other.max.z),
+            max_partial_ord(self.max.x, other.max.x),
+            max_partial_ord(self.max.y, other.max.y),
+            max_partial_ord(self.max.z, other.max.z),
         );
         Self { min, max }
     }
@@ -76,14 +77,14 @@ impl<S: cgmath::BaseNum + std::cmp::Ord> Bounds3<S> {
     /// Returns the intersection of the bounding boxes.
     pub fn intersection(&self, other: &Self) -> Option<Self> {
         let min = cgmath::Point3::new(
-            std::cmp::max(self.min.x, other.min.x),
-            std::cmp::max(self.min.y, other.min.y),
-            std::cmp::max(self.min.z, other.min.z),
+            max_partial_ord(self.min.x, other.min.x),
+            max_partial_ord(self.min.y, other.min.y),
+            max_partial_ord(self.min.z, other.min.z),
         );
         let max = cgmath::Point3::new(
-            std::cmp::min(self.max.x, other.max.x),
-            std::cmp::min(self.max.y, other.max.y),
-            std::cmp::min(self.max.z, other.max.z),
+            min_partial_ord(self.max.x, other.max.x),
+            min_partial_ord(self.max.y, other.max.y),
+            min_partial_ord(self.max.z, other.max.z),
         );
         if leq_3d(&min, &max) {
             Some(Self { min, max })
@@ -178,8 +179,44 @@ impl<S: cgmath::BaseNum + std::cmp::Ord> Bounds3<S> {
     // TODO: bounding_sphere, p. 81
 }
 
+impl Bounds3<f32> {
+    fn transform(&mut self, transform: cgmath::Matrix4<f32>) {
+        // TODO: This could be optimized.
+        let init = Self::from_point(transform.transform_point(self.min));
+        let bounds = self
+            .corners()
+            .into_iter()
+            .map(|p| transform.transform_point(p))
+            .fold(init, |bounds, p| bounds.union_with_point(&p));
+        self.min = bounds.min;
+        self.max = bounds.max;
+    }
+}
+
 /// Returns true if all dimensions of the first point are less than or equal
 /// to the respective dimensions of the second point.
-fn leq_3d<S: std::cmp::Ord>(p1: &cgmath::Point3<S>, p2: &cgmath::Point3<S>) -> bool {
+fn leq_3d<S: std::cmp::PartialOrd>(p1: &cgmath::Point3<S>, p2: &cgmath::Point3<S>) -> bool {
     p1.x <= p2.x && p1.y <= p2.y && p1.z <= p2.z
+}
+
+fn min_partial_ord<S: std::cmp::PartialOrd>(x: S, y: S) -> S {
+    if x.le(&y) {
+        x
+    } else if y.lt(&x) {
+        y
+    } else {
+        // FIXME: This isn't a good way of handling an error.
+        panic!("Could not find a minimumn between the given values.");
+    }
+}
+
+fn max_partial_ord<S: std::cmp::PartialOrd>(x: S, y: S) -> S {
+    if x.ge(&y) {
+        x
+    } else if y.gt(&x) {
+        y
+    } else {
+        // FIXME: This isn't a good way of handling an error.
+        panic!("Could not find a maximum between the given values.");
+    }
 }

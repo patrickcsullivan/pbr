@@ -1,4 +1,5 @@
 use crate::medium;
+use crate::transform;
 use cgmath::Transform;
 
 pub struct Ray {
@@ -24,12 +25,6 @@ impl Ray {
     fn at_t(&self, t: f32) -> cgmath::Point3<f32> {
         self.origin + self.direction * t
     }
-
-    fn transform(&mut self, transform: cgmath::Matrix4<f32>) {
-        // TODO: Deal with round-off error in origin transformation. (p. 95)
-        self.origin = transform.transform_point(self.origin);
-        self.direction = transform.transform_vector(self.direction);
-    }
 }
 
 impl Default for Ray {
@@ -44,7 +39,20 @@ impl Default for Ray {
     }
 }
 
-/// A primary ray along with two auxilary rays. Tee auxilary rays are offset
+impl transform::Transform<Ray> for cgmath::Matrix4<f32> {
+    fn transform(&self, ray: Ray) -> Ray {
+        Ray {
+            // FIXME: Deal with round-off error in point transformation. (p. 95)
+            origin: self.transform_point(ray.origin),
+            direction: self.transform_vector(ray.direction),
+            t_max: ray.t_max,
+            time: ray.time,
+            medium: ray.medium,
+        }
+    }
+}
+
+/// A primary ray along with two auxilary rays. The auxilary rays are offset
 /// from the primary ray by one sample in the x and y directions, respectively,
 /// on the film plane.
 pub struct RayDifferential {
@@ -92,6 +100,21 @@ impl Default for RayDifferential {
             dx_direction: cgmath::Vector3::new(0.0, 0.0, 0.0),
             dy_origin: cgmath::Point3::new(0.0, 0.0, 0.0),
             dy_direction: cgmath::Vector3::new(0.0, 0.0, 0.0),
+        }
+    }
+}
+
+impl transform::Transform<RayDifferential> for cgmath::Matrix4<f32> {
+    fn transform(&self, rd: RayDifferential) -> RayDifferential {
+        RayDifferential {
+            primary: self.transform(rd.primary),
+            has_differentials: rd.has_differentials,
+            // FIXME: Deal with round-off error in point transformation.
+            dx_origin: self.transform_point(rd.dx_origin),
+            dx_direction: self.transform_vector(rd.dx_direction),
+            // FIXME: Deal with round-off error in point transformation.
+            dy_origin: self.transform_point(rd.dy_origin),
+            dy_direction: self.transform_vector(rd.dy_direction),
         }
     }
 }

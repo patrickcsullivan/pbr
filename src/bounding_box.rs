@@ -1,4 +1,7 @@
+use core::f32;
+
 use crate::axis;
+use crate::transform;
 use cgmath::Transform;
 use cgmath::VectorSpace;
 
@@ -179,17 +182,15 @@ impl<S: cgmath::BaseNum + std::cmp::PartialOrd + std::fmt::Display> Bounds3<S> {
     // TODO: bounding_sphere, p. 81
 }
 
-impl Bounds3<f32> {
-    fn transform(&mut self, transform: cgmath::Matrix4<f32>) {
+impl transform::Transform<Bounds3<f32>> for cgmath::Matrix4<f32> {
+    fn transform(&self, bounds: Bounds3<f32>) -> Bounds3<f32> {
         // TODO: This could be optimized.
-        let init = Self::from_point(transform.transform_point(self.min));
-        let bounds = self
+        let init = Bounds3::from_point(self.transform_point(bounds.min));
+        bounds
             .corners()
             .into_iter()
-            .map(|p| transform.transform_point(p))
-            .fold(init, |bounds, p| bounds.union_with_point(&p));
-        self.min = bounds.min;
-        self.max = bounds.max;
+            .map(|p| self.transform_point(p))
+            .fold(init, |b, p| b.union_with_point(&p))
     }
 }
 

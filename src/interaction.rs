@@ -39,7 +39,7 @@ pub struct SurfaceInteraction<'a> {
     medium_interface: Option<medium::MediumInterface>,
 
     /// The shape that the point lies on.
-    shape: &'a shape::Shape,
+    shape: &'a shape::GenericShape,
 
     /// The surface normal at the interaction point.
     normal: cgmath::Vector3<f32>,
@@ -84,7 +84,7 @@ impl<'a> SurfaceInteraction<'a> {
         neg_ray_direction: Option<cgmath::Vector3<f32>>,
         time: std::time::Instant,
 
-        shape: &'a shape::Shape,
+        shape: &'a shape::GenericShape,
         uv: cgmath::Point2<f32>,
         dpdu: cgmath::Vector3<f32>,
         dpdv: cgmath::Vector3<f32>,

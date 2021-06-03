@@ -1,7 +1,7 @@
-use core::f32;
-
 use crate::axis;
+use crate::ray;
 use crate::transform;
+use cgmath::InnerSpace;
 use cgmath::Transform;
 use cgmath::VectorSpace;
 
@@ -180,6 +180,64 @@ impl<S: cgmath::BaseNum + std::cmp::PartialOrd + std::fmt::Display> Bounds3<S> {
 
     // TODO: offset, p. 81
     // TODO: bounding_sphere, p. 81
+}
+
+impl Bounds3<f32> {
+    /// Returns the range of parametric values for which the given ray passes
+    /// through the bounding box. If the ray's origin is inside the bounding box
+    /// then the lower bound will be 0.
+    pub fn ray_intersection(&self, ray: &ray::Ray) -> Option<(f32, f32)> {
+        // TODO: Consider implementing the optimized version of this function
+        // that takes pre-computed values described on p. 128.
+
+        let mut result = (0.0, ray.t_max);
+
+        for dim in 0..3 {
+            let ray_direction_recip = 1.0 / ray.direction[dim];
+
+            // Handle special cases where the ray direction is parallel to the
+            // min and max planes of the bounding box.
+            if ray_direction_recip.is_infinite() {
+                if ray.origin[dim] < self.min[dim] || ray.origin[dim] > self.max[dim] {
+                    // The ray origin does not lie between the planes, so the
+                    // ray can never intersect the bounding box.
+                    return None;
+                } else {
+                    // The ray origin is between the planes or on one of the
+                    // planes, so this dimension does not shrink the bounds of
+                    // the result.
+                    continue;
+                }
+            }
+
+            // Find the parametric value where the ray intersects each side of
+            // the bounding box in the current dimension.
+            let t_at_bounds_min = (self.min[dim] - ray.origin[dim]) * ray_direction_recip;
+            let t_at_bounds_max = (self.max[dim] - ray.origin[dim]) * ray_direction_recip;
+
+            // Assuming both sides of the bounding box are intersected,
+            // determine which intersection is nearest to the ray origin and
+            // which is furthest.
+            let (t_near, t_far) = if t_at_bounds_min > t_at_bounds_max {
+                (t_at_bounds_max, t_at_bounds_min)
+            } else {
+                (t_at_bounds_min, t_at_bounds_max)
+            };
+
+            // Shrink the bounds in the result .
+            if t_near > result.0 {
+                result.0 = t_near;
+            }
+            if t_far < result.1 {
+                result.1 = t_far;
+            }
+            if result.0 > result.1 {
+                return None;
+            }
+        }
+
+        Some(result)
+    }
 }
 
 impl transform::Transform<Bounds3<f32>> for cgmath::Matrix4<f32> {

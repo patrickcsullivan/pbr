@@ -1,4 +1,6 @@
 use crate::bounding_box;
+use crate::interaction;
+use crate::ray;
 use crate::transform::Transform;
 
 /// Describes the geometric properties of a primitive and provides a ray
@@ -26,6 +28,23 @@ trait Shape<'a> {
 
     /// Returns an axis-aligned bounding box in world space.
     fn world_bound() -> bounding_box::Bounds3<f32>;
+
+    /// Returns information about the first ray-shape intersection, if any, in
+    /// the (0, `ray.t_max`) parametric range along the ray.
+    ///
+    /// `ray` is in world space, and the returned surface interaction is in
+    /// world space.
+    fn ray_intersection(
+        &self,
+        ray: &ray::Ray,
+        test_alpha_texture: bool,
+    ) -> Option<(f32, interaction::SurfaceInteraction)>;
+
+    /// Returns a boolean indicating whether the ray intersects the shape.
+    fn does_ray_intersect(&self, ray: &ray::Ray, test_alpha_texture: bool) -> bool;
+
+    /// Returns the surface area of the shape.
+    fn surface_area(&self) -> f32;
 }
 
 // TODO: Remove and replace uses of GenericShape with Shape trait objects.

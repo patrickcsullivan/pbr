@@ -159,7 +159,7 @@ impl<'a> SurfaceInteraction<'a> {
 }
 
 impl<'a> transform::Transform<SurfaceInteraction<'a>> for cgmath::Matrix4<f32> {
-    fn transform(&self, interaction: SurfaceInteraction<'a>) -> SurfaceInteraction<'a> {
+    fn transform(&self, interaction: &SurfaceInteraction<'a>) -> SurfaceInteraction<'a> {
         let mut transformed = SurfaceInteraction {
             point: interaction.point, // FIXME: Handle point transformation in Section 3.9.
             point_error_bound: interaction.point_error_bound, // FIXME: Handle error transformation in Section 3.9.

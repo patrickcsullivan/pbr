@@ -1,3 +1,5 @@
+mod sphere;
+
 use crate::bounding_box;
 use crate::interaction;
 use crate::ray;
@@ -8,26 +10,26 @@ use crate::transform::Transform;
 trait Shape<'a> {
     /// Returns a reference to the matrix that transforms the shape from object
     /// space to world space.
-    fn transform() -> &'a cgmath::Matrix4<f32>;
+    fn object_to_world(&self) -> &'a cgmath::Matrix4<f32>;
 
-    /// Returns a reference to the inverse of the object-to-world transform
-    /// matrix.
-    fn inverse_transform() -> &'a cgmath::Matrix4<f32>;
+    /// Returns a reference to the matrix that transforms the shape from world
+    /// space to object space.
+    fn world_to_object(&self) -> &'a cgmath::Matrix4<f32>;
 
-    /// Returns a flag that indicates whether the shape's object-to-world
+    /// Returns a flag that indicates whether the shape's `object_to_world`
     /// transform matrix swaps the handedness of the object coordinate system.
-    fn transform_swaps_handedness() -> bool;
+    fn object_to_world_swaps_handedness(&self) -> bool;
 
     /// Returns a flag that indicates whether the shape's normals should be
     /// flipped from their original directions in order to point to the outside
     /// of the shape.
-    fn reverse_orientation() -> bool;
+    fn reverse_orientation(&self) -> bool;
 
     /// Returns an axis-aligned bounding box in the shape's object space.
-    fn object_bound() -> bounding_box::Bounds3<f32>;
+    fn object_bound(&self) -> bounding_box::Bounds3<f32>;
 
     /// Returns an axis-aligned bounding box in world space.
-    fn world_bound() -> bounding_box::Bounds3<f32>;
+    fn world_bound(&self) -> bounding_box::Bounds3<f32>;
 
     /// Returns information about the first ray-shape intersection, if any, in
     /// the (0, `ray.t_max`) parametric range along the ray.
@@ -57,14 +59,4 @@ pub struct GenericShape {
     /// Flag that indicates whether the shape's `transform` swaps the handedness
     /// of the object coordinate system for the shape.
     pub transform_swaps_handedness: bool,
-}
-
-// This naiive world space bounding box calculation can be used by default, but
-// shapes that can easily calculate a tighter world space bounding box should
-// implement a custom function.
-fn naiive_world_bound(
-    bounds: &bounding_box::Bounds3<f32>,
-    transform: &cgmath::Matrix4<f32>,
-) -> bounding_box::Bounds3<f32> {
-    transform.transform(*bounds)
 }

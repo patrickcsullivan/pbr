@@ -2,6 +2,7 @@ use crate::medium;
 use crate::transform;
 use cgmath::Transform;
 
+#[derive(Clone, Copy)]
 pub struct Ray {
     pub origin: cgmath::Point3<f32>,
     pub direction: cgmath::Vector3<f32>,
@@ -40,7 +41,7 @@ impl Default for Ray {
 }
 
 impl transform::Transform<Ray> for cgmath::Matrix4<f32> {
-    fn transform(&self, ray: Ray) -> Ray {
+    fn transform(&self, ray: &Ray) -> Ray {
         Ray {
             // FIXME: Deal with round-off error in point transformation. (p. 95)
             origin: self.transform_point(ray.origin),
@@ -105,9 +106,9 @@ impl Default for RayDifferential {
 }
 
 impl transform::Transform<RayDifferential> for cgmath::Matrix4<f32> {
-    fn transform(&self, rd: RayDifferential) -> RayDifferential {
+    fn transform(&self, rd: &RayDifferential) -> RayDifferential {
         RayDifferential {
-            primary: self.transform(rd.primary),
+            primary: self.transform(&rd.primary),
             has_differentials: rd.has_differentials,
             // FIXME: Deal with round-off error in point transformation.
             dx_origin: self.transform_point(rd.dx_origin),

@@ -241,7 +241,7 @@ impl Bounds3<f32> {
 }
 
 impl transform::Transform<Bounds3<f32>> for cgmath::Matrix4<f32> {
-    fn transform(&self, bounds: Bounds3<f32>) -> Bounds3<f32> {
+    fn transform(&self, bounds: &Bounds3<f32>) -> Bounds3<f32> {
         // TODO: This could be optimized.
         let init = Bounds3::from_point(self.transform_point(bounds.min));
         bounds

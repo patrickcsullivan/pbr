@@ -3,6 +3,9 @@ use crate::bounding_box;
 use crate::ray::Ray;
 use crate::transform::SwapHandedness;
 use crate::transform::Transform;
+use cgmath::Point3;
+use cgmath::Vector3;
+use efloat::EFloat32;
 
 /// A sphere centered at the origin in object space.
 pub struct Sphere<'a> {
@@ -81,9 +84,26 @@ impl<'a> Shape<'a> for Sphere<'a> {
         ray: &crate::ray::Ray,
         test_alpha_texture: bool,
     ) -> Option<(f32, crate::interaction::SurfaceInteraction)> {
-        let ray = self.object_to_world.transform(ray);
-        // let (o_err, d_err) = ...from transform...
-        // TODO: Compute quatratic sphere coordinates.
+        let ray = self.object_to_world.transform(ray); // TODO: Return o_err and d_err too.
+                                                       // let (o_err, d_err) = ...from transform...
+
+        let o_err = Point3::new(0.0, 0.0, 0.0);
+        let d_err = Vector3::new(0.0, 0.0, 0.0);
+
+        // Initialize ray values.
+        let ox = EFloat32::new_with_err(ray.origin.x, o_err.x);
+        let oy = EFloat32::new_with_err(ray.origin.y, o_err.y);
+        let oz = EFloat32::new_with_err(ray.origin.z, o_err.z);
+        let dx = EFloat32::new_with_err(ray.direction.x, d_err.x);
+        let dy = EFloat32::new_with_err(ray.direction.y, d_err.y);
+        let dz = EFloat32::new_with_err(ray.direction.z, d_err.z);
+
+        // Compute quatratic sphere coordinates.
+        let a = dx * dx + dy * dy + dz * dz;
+        let b = EFloat32::new(2.0) * (dx * ox + dy * oy + dz * oz);
+        let c =
+            ox * ox + oy * oy + oz * oz - EFloat32::new(self.radius) * EFloat32::new(self.radius);
+
         // TODO: Solve quadratic equation for t values.
         // TODO: Compute sphere hit position and phi.
         // TODO: Test sphere intersection against clipping parameters.

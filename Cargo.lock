@@ -26,6 +26,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "efloat"
+version = "0.2.0"
+dependencies = [
+ "float-cmp",
+ "num-traits",
+]
+
+[[package]]
+name = "float-cmp"
+version = "0.9.0-pre"
+source = "git+https://github.com/mikedilger/float-cmp#22dad5c2a9dc28eaece42208b143c715ca70b279"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -39,4 +55,5 @@ name = "pbr"
 version = "0.1.0"
 dependencies = [
  "cgmath",
+ "efloat",
 ]

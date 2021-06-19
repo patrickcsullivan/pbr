@@ -1,4 +1,5 @@
 mod sphere;
+mod triangle;
 
 use crate::bounding_box;
 use crate::interaction;
